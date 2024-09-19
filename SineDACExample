@@ -3,9 +3,8 @@
 #include <math.h>
 
 #define F_CPU 16000000UL  // 16 MHz clock speed
-#define SCL_CLOCK 100000L // I2C clock set to 100 kHz (Standard mode)
-#define MCP4725_ADDR 0x62 // MCP4725 I2C address (standard address is 0x60)
-
+#define SCL_CLOCK 100000L // I2C clock set to 100 kHz 
+#define MCP4725_ADDR 0x62 // MCP4725 I2C address 
 // I2C Initialization
 void I2C_Init(void) {
 	// Set the bit rate for 100 kHz I2C
@@ -59,17 +58,14 @@ void Generate_Sine_Wave(void) {
 			angle = 0;  // Reset angle to loop the sine wave
 		}
 
-		_delay_ms(100);  // Delay to control the output frequency of the sine wave
+		_delay_ms(10);  // Delay to control the output frequency of the sine wave
 	}
 }
 
-//testing single value
 void Test_MCP4725(void) {
 	MCP4725_SetValue(1);  // Set to mid-scale value
 	while (1);  // Infinite loop to hold the value
 }
-
-
 
 int main(void) {
 	I2C_Init();  // Initialize I2C communication
