@@ -39,6 +39,7 @@ void MCP4725_SetValue(uint16_t value) {
 	I2C_Stop();
 }
 
+// time per step = 1/(frequency(hz) x number of steps) 
 // Generate Sine Wave
 void Generate_Sine_Wave(void) {
 	uint16_t dac_value;
@@ -62,10 +63,44 @@ void Generate_Sine_Wave(void) {
 	}
 }
 
+
+
+void Generate_Triangle_Wave(void) {
+	uint16_t dac_value = 0;  // Start at 0
+	int step_size = 40;  // Step size for the wave
+	uint8_t direction = 1;  // 1 for rising, 0 for falling
+
+	while (1) {
+		// Send the current DAC value to the MCP4725
+		MCP4725_SetValue(dac_value);
+
+		// Adjust DAC value based on the current direction (rising or falling)
+		if (direction) {
+			dac_value += step_size;  // Increment for rising
+			if (dac_value >= 4095) {  // If reached max, start falling
+				dac_value = 4095;
+				direction = 0;  // Switch to falling
+			}
+		} else {
+			dac_value -= step_size;  // Decrement for falling
+			if (dac_value <= 0) {  // If reached min, start rising
+				dac_value = 0;
+				direction = 1;  // Switch to rising
+			}
+		}
+
+		_delay_ms(1);  // Adjust delay to control frequency
+	}
+}
+
+
+
 void Test_MCP4725(void) {
 	MCP4725_SetValue(1);  // Set to mid-scale value
 	while (1);  // Infinite loop to hold the value
 }
+
+
 
 int main(void) {
 	I2C_Init();  // Initialize I2C communication
