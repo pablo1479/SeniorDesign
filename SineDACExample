@@ -3,8 +3,8 @@
 #include <math.h>
 
 #define F_CPU 16000000UL  // 16 MHz clock speed
-#define SCL_CLOCK 100000L // I2C clock set to 100 kHz 
-#define MCP4725_ADDR 0x62 // MCP4725 I2C address 
+#define SCL_CLOCK 100000L // I2C clock set to 100 kHz
+#define MCP4725_ADDR 0x62 // MCP4725 I2C address
 // I2C Initialization
 void I2C_Init(void) {
 	// Set the bit rate for 100 kHz I2C
@@ -39,7 +39,7 @@ void MCP4725_SetValue(uint16_t value) {
 	I2C_Stop();
 }
 
-// time per step = 1/(frequency(hz) x number of steps) 
+// time per step = 1/(frequency(hz) x number of steps)
 // Generate Sine Wave
 void Generate_Sine_Wave(void) {
 	uint16_t dac_value;
@@ -59,13 +59,13 @@ void Generate_Sine_Wave(void) {
 			angle = 0;  // Reset angle to loop the sine wave
 		}
 
-		_delay_ms(10);  // Delay to control the output frequency of the sine wave
+		_delay_ms(9);  // Delay to control the output frequency of the sine wave
 	}
 }
 
 
 
-void Generate_Triangle_Wave(void) {
+void Generate_Ramp_Wave(void) {
 	uint16_t dac_value = 0;  // Start at 0
 	int step_size = 40;  // Step size for the wave
 	uint8_t direction = 1;  // 1 for rising, 0 for falling
@@ -81,7 +81,7 @@ void Generate_Triangle_Wave(void) {
 				dac_value = 4095;
 				direction = 0;  // Switch to falling
 			}
-		} else {
+			} else {
 			dac_value -= step_size;  // Decrement for falling
 			if (dac_value <= 0) {  // If reached min, start rising
 				dac_value = 0;
@@ -89,10 +89,56 @@ void Generate_Triangle_Wave(void) {
 			}
 		}
 
-		_delay_ms(1);  // Adjust delay to control frequency
+		_delay_ms(11);  // Adjust delay to control frequency
 	}
 }
 
+void Generate_Triangle_Wave(void) {
+	uint16_t dac_value = 0;  // Start at the minimum value
+	int step_size = 40;  // Step size for each increment/decrement
+	uint8_t direction = 1;  // 1 means rising, 0 means falling
+
+	while (1) {
+		// Send the current DAC value to the MCP4725
+		MCP4725_SetValue(dac_value);
+
+		// Adjust DAC value based on the current direction (rising or falling)
+		if (direction) {
+			dac_value += step_size;  // Increment value while rising
+			if (dac_value >= 4094) {  // If the peak is reached, start falling
+				direction = 0;  // Switch to falling
+			}
+			} else {
+			dac_value -= step_size;  // Decrement value while falling
+			if (dac_value <= 0) {  // If the bottom is reached, start rising
+				direction = 1;  // Switch to rising
+			}
+		}
+
+		_delay_ms(3);  // Adjust delay to control the frequency of the triangle wave
+	}
+}
+
+
+void Generate_Square_Wave(void) {
+	uint16_t dac_value_high = 4095;  // High value for the square wave (maximum for a 12-bit DAC)
+	uint16_t dac_value_low = 0;      // Low value for the square wave (minimum)
+	uint16_t dac_value = dac_value_high;  // Start with the high value
+
+	while (1) {
+		// Send the current DAC value to the MCP4725
+		MCP4725_SetValue(dac_value);
+
+		// Toggle between high and low values
+		if (dac_value == dac_value_high) {
+			dac_value = dac_value_low;  // Switch to low value
+			} else {
+			dac_value = dac_value_high;  // Switch to high value
+		}
+
+		_delay_ms(1575);  // Adjust delay to control the frequency of the square wave
+	}
+}
 
 
 void Test_MCP4725(void) {
@@ -104,8 +150,12 @@ void Test_MCP4725(void) {
 
 int main(void) {
 	I2C_Init();  // Initialize I2C communication
-	    //Test_MCP4725();
+	//Test_MCP4725();
 
-	Generate_Sine_Wave();  // Start generating the sine wave
+	//Generate_Sine_Wave();  // Start generating the sine wave
+	//Generate_Ramp_Wave();
+	//Generate_Triangle_Wave();
+	
+	Generate_Square_Wave();
 	return 0;
 }
