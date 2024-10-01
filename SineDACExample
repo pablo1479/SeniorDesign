@@ -5,6 +5,21 @@
 #define F_CPU 16000000UL  // 16 MHz clock speed
 #define SCL_CLOCK 100000L // I2C clock set to 100 kHz
 #define MCP4725_ADDR 0x62 // MCP4725 I2C address
+
+const uint16_t sine_lut[100] = {
+    2048, 2177, 2306, 2434, 2561, 2687, 2811, 2933, 3053, 3170,
+    3284, 3395, 3503, 3607, 3707, 3804, 3896, 3983, 4066, 4144,
+    4216, 4283, 4345, 4400, 4449, 4493, 4530, 4560, 4585, 4603,
+    4614, 4619, 4618, 4611, 4598, 4578, 4553, 4522, 4486, 4444,
+    4398, 4346, 4289, 4227, 4161, 4091, 4016, 3938, 3856, 3770,
+    3681, 3589, 3494, 3396, 3296, 3193, 3088, 2982, 2874, 2764,
+    2653, 2542, 2430, 2317, 2205, 2093, 1981, 1870, 1760, 1651,
+    1543, 1437, 1333, 1232, 1133, 1036, 943, 852, 764, 679,
+    598, 521, 447, 377, 311, 249, 191, 138, 89, 45,
+    6, 1, 8, 28, 52, 80, 111, 146, 184, 226
+};
+
+
 // I2C Initialization
 void I2C_Init(void) {
 	// Set the bit rate for 100 kHz I2C
@@ -38,9 +53,38 @@ void MCP4725_SetValue(uint16_t value) {
 	I2C_Write(value & 0xFF);  // Send lower data bits (D7-D0)
 	I2C_Stop();
 }
+//-------------------------------------------------------------------------
+//            Sine wave Generator using accumlator and look up table
+//*
+void generate_sine_wave(void){
+	uint16_t dacvalue;
+	uint16t_t accumulator = 0;
+	uint16_t stepsize = 1;
+	uint16_t lut_size = sizeof(sine_lut) / sizeof(sine_lut[0]);
 
+	while (1) {
+		dacvalue = sine_lut(accumulator);
+
+	        MCP4725_SetValue(dac_value);
+
+		accumulator += stepsize;
+
+		if(accumulator > lut_size) {
+			accumulator = 0;
+		}
+
+		delay_ms(9);
+	}
+}
+	
+*//
+//-------------------------------------------------------------------------
+
+
+//-------------------------------------------------------------------------
+//            Sine wave Generator using equation
 // time per step = 1/(frequency(hz) x number of steps)
-// Generate Sine Wave
+
 void Generate_Sine_Wave(void) {
 	uint16_t dac_value;
 	float angle = 0.0;
@@ -62,8 +106,11 @@ void Generate_Sine_Wave(void) {
 		_delay_ms(9);  // Delay to control the output frequency of the sine wave
 	}
 }
+//-------------------------------------------------------------------------
 
 
+//-------------------------------------------------------------------------
+//            Ramp wave Generator using equation
 
 void Generate_Ramp_Wave(void) {
 	uint16_t dac_value = 0;  // Start at 0
@@ -92,6 +139,11 @@ void Generate_Ramp_Wave(void) {
 		_delay_ms(11);  // Adjust delay to control frequency
 	}
 }
+//-------------------------------------------------------------------------
+
+
+//-------------------------------------------------------------------------
+//                       Triangle wave generator
 
 void Generate_Triangle_Wave(void) {
 	uint16_t dac_value = 0;  // Start at the minimum value
@@ -118,7 +170,12 @@ void Generate_Triangle_Wave(void) {
 		_delay_ms(3);  // Adjust delay to control the frequency of the triangle wave
 	}
 }
+//-------------------------------------------------------------------------
 
+
+
+//-------------------------------------------------------------------------
+//                        Square wave generator
 
 void Generate_Square_Wave(void) {
 	uint16_t dac_value_high = 4095;  // High value for the square wave (maximum for a 12-bit DAC)
@@ -139,12 +196,17 @@ void Generate_Square_Wave(void) {
 		_delay_ms(1575);  // Adjust delay to control the frequency of the square wave
 	}
 }
+//-------------------------------------------------------------------------
 
+
+//-------------------------------------------------------------------------
+//                      Testing values function
 
 void Test_MCP4725(void) {
 	MCP4725_SetValue(1);  // Set to mid-scale value
 	while (1);  // Infinite loop to hold the value
 }
+//-------------------------------------------------------------------------
 
 
 
