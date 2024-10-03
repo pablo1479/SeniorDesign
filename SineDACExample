@@ -54,30 +54,30 @@ void MCP4725_SetValue(uint16_t value) {
 	I2C_Stop();
 }
 //-------------------------------------------------------------------------
-//            Sine wave Generator using accumlator and look up table
+//            Sine wave Generator using accumulator and look up table
 //*
-void generate_sine_wave(void){
+void generate_sine_waveacum(void){
 	uint16_t dacvalue;
-	uint16t_t accumulator = 0;
+	uint16_t accumulator = 0;
 	uint16_t stepsize = 1;
 	uint16_t lut_size = sizeof(sine_lut) / sizeof(sine_lut[0]);
 
 	while (1) {
-		dacvalue = sine_lut(accumulator);
+		dacvalue = sine_lut[accumulator];
 
-	        MCP4725_SetValue(dac_value);
+	    MCP4725_SetValue(dacvalue);
 
 		accumulator += stepsize;
 
-		if(accumulator > lut_size) {
+		if(accumulator >= lut_size) {
 			accumulator = 0;
 		}
 
-		delay_ms(9);
+		_delay_ms(9);
 	}
 }
 	
-*//
+//
 //-------------------------------------------------------------------------
 
 
@@ -213,11 +213,11 @@ void Test_MCP4725(void) {
 int main(void) {
 	I2C_Init();  // Initialize I2C communication
 	//Test_MCP4725();
-
+    generate_sine_waveacum();
 	//Generate_Sine_Wave();  // Start generating the sine wave
 	//Generate_Ramp_Wave();
 	//Generate_Triangle_Wave();
 	
-	Generate_Square_Wave();
+	//Generate_Square_Wave();
 	return 0;
 }
