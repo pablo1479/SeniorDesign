@@ -6,19 +6,32 @@
 #define SCL_CLOCK 100000L // I2C clock set to 100 kHz
 #define MCP4725_ADDR 0x62 // MCP4725 I2C address
 
-const uint16_t sine_lut[100] = {
-    2048, 2177, 2306, 2434, 2561, 2687, 2811, 2933, 3053, 3170,
-    3284, 3395, 3503, 3607, 3707, 3804, 3896, 3983, 4066, 4144,
-    4216, 4283, 4345, 4400, 4449, 4493, 4530, 4560, 4585, 4603,
-    4614, 4619, 4618, 4611, 4598, 4578, 4553, 4522, 4486, 4444,
-    4398, 4346, 4289, 4227, 4161, 4091, 4016, 3938, 3856, 3770,
-    3681, 3589, 3494, 3396, 3296, 3193, 3088, 2982, 2874, 2764,
-    2653, 2542, 2430, 2317, 2205, 2093, 1981, 1870, 1760, 1651,
-    1543, 1437, 1333, 1232, 1133, 1036, 943, 852, 764, 679,
-    598, 521, 447, 377, 311, 249, 191, 138, 89, 45,
-    6, 1, 8, 28, 52, 80, 111, 146, 184, 226
+const uint16_t sine_lut[] = {
+	2049, 2177, 2305, 2432, 2557, 2681, 2802, 2920,
+	3035, 3145, 3252, 3353, 3450, 3541, 3626, 3705,
+	3777, 3843, 3901, 3952, 3996, 4032, 4060, 4080,
+	4092, 4096, 4092, 4080, 4060, 4032, 3996, 3952,
+	3901, 3843, 3777, 3705, 3626, 3541, 3450, 3353,
+	3252, 3145, 3035, 2920, 2802, 2681, 2557, 2432,
+	2305, 2177, 2048, 1919, 1791, 1664, 1539, 1415,
+	1294, 1176, 1061, 951, 844, 743, 646, 555,
+	470, 391, 319, 253, 195, 144, 100, 64,
+	36, 16, 4, 0, 4, 16, 36, 64,
+	100, 144, 195, 253, 319, 391, 470, 555,
+	646, 743, 844, 951, 1061, 1176, 1294, 1415,
+	1539, 1664, 1791, 1919
 };
-
+/* 2048, 2177, 2306, 2434, 2561, 2687, 2811, 2933, 3053, 3170,
+3284, 3395, 3503, 3607, 3707, 3804, 3896, 3983, 4066, 4144,
+4216, 4283, 4345, 4400, 4449, 4493, 4530, 4560, 4585, 4603,
+4614, 4619, 4618, 4611, 4598, 4578, 4553, 4522, 4486, 4444,
+4398, 4346, 4289, 4227, 4161, 4091, 4016, 3938, 3856, 3770,
+3681, 3589, 3494, 3396, 3296, 3193, 3088, 2982, 2874, 2764,
+2653, 2542, 2430, 2317, 2205, 2093, 1981, 1870, 1760, 1651,
+1543, 1437, 1333, 1232, 1133, 1036, 943, 852, 764, 679,
+598, 521, 447, 377, 311, 249, 191, 138, 89, 45,
+6, 1, 8, 28, 52, 80, 111, 146, 184, 226 
+*/
 
 // I2C Initialization
 void I2C_Init(void) {
@@ -59,7 +72,7 @@ void MCP4725_SetValue(uint16_t value) {
 void generate_sine_waveacum(void){
 	uint16_t dacvalue;
 	uint16_t accumulator = 0;
-	uint16_t stepsize = 1;
+	uint16_t stepsize = 2;
 	uint16_t lut_size = sizeof(sine_lut) / sizeof(sine_lut[0]);
 
 	while (1) {
@@ -73,7 +86,7 @@ void generate_sine_waveacum(void){
 			accumulator = 0;
 		}
 
-		_delay_ms(9);
+		//_delay_ms(100);
 	}
 }
 	
@@ -103,7 +116,7 @@ void Generate_Sine_Wave(void) {
 			angle = 0;  // Reset angle to loop the sine wave
 		}
 
-		_delay_ms(9);  // Delay to control the output frequency of the sine wave
+		_delay_ms(800.4);  // Delay to control the output frequency of the sine wave
 	}
 }
 //-------------------------------------------------------------------------
@@ -114,29 +127,22 @@ void Generate_Sine_Wave(void) {
 
 void Generate_Ramp_Wave(void) {
 	uint16_t dac_value = 0;  // Start at 0
-	int step_size = 40;  // Step size for the wave
-	uint8_t direction = 1;  // 1 for rising, 0 for falling
+	int step_size = 1000;  // Step size for the ramp wave
 
 	while (1) {
 		// Send the current DAC value to the MCP4725
 		MCP4725_SetValue(dac_value);
 
-		// Adjust DAC value based on the current direction (rising or falling)
-		if (direction) {
-			dac_value += step_size;  // Increment for rising
-			if (dac_value >= 4095) {  // If reached max, start falling
-				dac_value = 4095;
-				direction = 0;  // Switch to falling
-			}
-			} else {
-			dac_value -= step_size;  // Decrement for falling
-			if (dac_value <= 0) {  // If reached min, start rising
-				dac_value = 0;
-				direction = 1;  // Switch to rising
-			}
+		// Increment the DAC value
+		dac_value += step_size;
+
+		// Reset to 0 when the value reaches the maximum (4095 for a 12-bit DAC)
+		if (dac_value >= 4095) {
+			dac_value = 0;  // Reset to 0
 		}
 
-		_delay_ms(11);  // Adjust delay to control frequency
+		//_delay_ms(100);  // Adjust delay to control frequency
+		//_delay_us(10);
 	}
 }
 //-------------------------------------------------------------------------
@@ -167,7 +173,7 @@ void Generate_Triangle_Wave(void) {
 			}
 		}
 
-		_delay_ms(3);  // Adjust delay to control the frequency of the triangle wave
+		//_delay_ms(3);  // Adjust delay to control the frequency of the triangle wave
 	}
 }
 //-------------------------------------------------------------------------
@@ -193,7 +199,8 @@ void Generate_Square_Wave(void) {
 			dac_value = dac_value_high;  // Switch to high value
 		}
 
-		_delay_ms(1575);  // Adjust delay to control the frequency of the square wave
+		//_delay_ms(.75);  // Adjust delay to control the frequency of the square wave
+		//_delay_us(.001);
 	}
 }
 //-------------------------------------------------------------------------
@@ -208,16 +215,76 @@ void Test_MCP4725(void) {
 }
 //-------------------------------------------------------------------------
 
+void Generate_Square_Wave_D(void) {
+	uint16_t dac_value_high = 4095;  // High value for the square wave (maximum for a 12-bit DAC)
+	uint16_t dac_value_low = 0;      // Low value for the square wave (minimum)
+	uint16_t dac_value = dac_value_high;  // Start with the high value
+	
+	int frequency = 10;
+	int period = 1/frequency;
+	int delayy = 0;
 
+	while (1) {
+		// Send the current DAC value to the MCP4725
+		MCP4725_SetValue(dac_value);
+
+		// Toggle between high and low values
+		if (dac_value == dac_value_high) {
+			dac_value = dac_value_low;  // Switch to low value
+			} else {
+			dac_value = dac_value_high;  // Switch to high value
+		}
+		delayy = (period * 1000) / 2;
+		while(delayy>0){
+			_delay_ms(1);
+			delayy--;
+		}
+		  // Adjust delay to control the frequency of the square wave
+	}
+}
+
+void Generate_Triangle_Wave_D(void) {
+	uint16_t dac_value = 0;  // Start at the minimum value
+	int step_size = 40;  // Step size for each increment/decrement
+	uint8_t direction = 1;  // 1 means rising, 0 means falling
+
+	int frequency = 10;
+	int period = 1/frequency;
+	
+	int delayy = 0;
+	while (1) {
+		// Send the current DAC value to the MCP4725
+		MCP4725_SetValue(dac_value);
+
+		// Adjust DAC value based on the current direction (rising or falling)
+		if (direction) {
+			dac_value += step_size;  // Increment value while rising
+			if (dac_value >= 4094) {  // If the peak is reached, start falling
+				direction = 0;  // Switch to falling
+			}
+			} else {
+			dac_value -= step_size;  // Decrement value while falling
+			if (dac_value <= 0) {  // If the bottom is reached, start rising
+				direction = 1;  // Switch to rising
+			}
+		}
+	     delayy = 103 / ( (period * 1000) / 2);
+		while(delayy>0){
+			_delay_ms(1);
+			delayy--;
+		}  // Adjust delay to control the frequency of the triangle wave
+	}
+}
 
 int main(void) {
 	I2C_Init();  // Initialize I2C communication
 	//Test_MCP4725();
-    generate_sine_waveacum();
+    //generate_sine_waveacum();
 	//Generate_Sine_Wave();  // Start generating the sine wave
 	//Generate_Ramp_Wave();
 	//Generate_Triangle_Wave();
 	
-	//Generate_Square_Wave();
+	//Generate_Square_Wave_D();
+	Generate_Square_Wave();
 	return 0;
 }
