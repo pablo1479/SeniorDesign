@@ -141,9 +141,9 @@ const uint16_t sine_lut[] = {
 
 // I2C Initialization
 void I2C_Init(void) {
-	// Set the bit rate for 100 kHz I2C
+	// Set the bit rate for 400 kHz I2C
 	TWSR = 0x00;  // Prescaler set to 1
-	TWBR = ((F_CPU / SCL_CLOCK) - 16) / 2;  // Set bit rate register for 100kHz
+	TWBR = ((F_CPU / SCL_CLOCK) - 16) / 2;  // Set bit rate register for 400kHz
 }
 
 // I2C Start condition
@@ -259,21 +259,24 @@ void Generate_Ramp_Wave(void) {
 //                       Triangle wave generator
 
 void Generate_Triangle_Wave(void) {
-	uint16_t dac_value = 0;  // Start at the minimum value
-	int step_size = 40;  // Step size for each increment/decrement
+	int dac_value = 0;  // Start at the minimum value
+	int step_size = 50;  // Step size for each increment/decrement 1500 steos 2.16kHZ
 	uint8_t direction = 1;  // 1 means rising, 0 means falling
 
 	while (1) {
 		// Send the current DAC value to the MCP4725
+		if (dac_value > 4095) dac_value = 4095;
+		if (dac_value < 0) dac_value = 0;
 		MCP4725_SetValue(dac_value);
 
 		// Adjust DAC value based on the current direction (rising or falling)
 		if (direction) {
 			dac_value += step_size;  // Increment value while rising
-			if (dac_value >= 4094) {  // If the peak is reached, start falling
+			if (dac_value >= 4090) {  // If the peak is reached, start falling
 				direction = 0;  // Switch to falling
 			}
-			} else {
+			} 
+		else {
 			dac_value -= step_size;  // Decrement value while falling
 			if (dac_value <= 0) {  // If the bottom is reached, start rising
 				direction = 1;  // Switch to rising
@@ -306,7 +309,7 @@ void Generate_Square_Wave(void) {
 			dac_value = dac_value_high;  // Switch to high value
 		}
 
-		//_delay_ms();  // Adjust delay to control the frequency of the square wave
+		_delay_ms(400);  // Adjust delay to control the frequency of the square wave
 		//_delay_us(.001);
 	}
 }
@@ -328,7 +331,7 @@ void Generate_Square_Wave_D(void) {
 	uint16_t dac_value = dac_value_high;  // Start with the high value
 	
 	int frequency = 10;
-	int period = 1/frequency;
+	int period_ms = 1000/frequency;
 	int delayy = 0;
 
 	while (1) {
@@ -341,7 +344,7 @@ void Generate_Square_Wave_D(void) {
 			} else {
 			dac_value = dac_value_high;  // Switch to high value
 		}
-		delayy = (period * 1000) / 2;
+		delayy = period_ms/2;
 		while(delayy>0){
 			_delay_ms(1);
 			delayy--;
@@ -386,12 +389,12 @@ void Generate_Triangle_Wave_D(void) {
 int main(void) {
 	I2C_Init();  // Initialize I2C communication
 	//Test_MCP4725();
-    generate_sine_waveacum();
+    //generate_sine_waveacum();
 	//Generate_Sine_Wave();  // Start generating the sine wave
 	//Generate_Ramp_Wave();
 	//Generate_Triangle_Wave();
 	
 	//Generate_Square_Wave_D();
-	//Generate_Square_Wave();
+	Generate_Square_Wave();
 	return 0;
 }
