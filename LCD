@@ -1,3 +1,10 @@
+/*
+ * GccApplication4.c
+ *
+ * Created: 4/2/2024 8:56:22 PM
+ * Author : david
+ */ 
+
 #include <avr/io.h>
 #include "liquid_crystal_i2c.h"
 #define F_CPU 16000000UL
@@ -11,7 +18,7 @@
 int main(void)
 {
    
-	i2c_master_init(I2C_SCL_FREQUENCY_100);
+	i2c_master_init(I2C_SCL_FREQUENCY_400);
 	LiquidCrystalDevice_t device = lq_init(0x27, 20, 4, LCD_5x8DOTS);
 	lq_turnOnBacklight(&device); // simply turning on the backlight
 	
