@@ -10,7 +10,7 @@
 
 //function prototypes
 
-void MCP4725_SetValue (uint16_t value)
+void MCP4725_SetValue (uint16_t value);
 void Generate_Sine_Wave (double amplitude, int frequency);
 void Generate_Triangle_Wave (
 void Generate_Square_Wave ( 
@@ -312,3 +312,17 @@ int main(void) {
         }
     }
 }
+
+
+void MCP4725_SetValue (uint16_t value)(
+    i2c_master_start(MCP4725_ADDR, I2C_WRITE);
+    i2c_master_write((data << 8) & 0x0F);
+    i
+
+
+
+
+
+
+
+)
