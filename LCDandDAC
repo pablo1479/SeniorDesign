@@ -4,23 +4,11 @@
 #include <util/delay.h>
 #include "i2c_master.h"
 #include <stdio.h>
+#include "waveform.h" 
+
 
 #define MCP4725_ADDR 0X62 // MCP4725 DAC address
 #define F_CPU 16000000UL
-
-//function prototypes
-
-void MCP4725_SetValue (uint16_t value);
-void Generate_Sine_Wave (double amplitude, int frequency);
-void Generate_Triangle_Wave (
-void Generate_Square_Wave ( 
-void 
-
-
-
-
-
-
 
 
 int main(void) {
@@ -49,7 +37,7 @@ int main(void) {
     // Main loop
     while (1) {
         // Check for AUX mode
-        if (PINB & (1 << 0)) {
+     /*   if (PINB & (1 << 0)) {
             if (screen == 0) {
                 lq_clear(&device);
                 screen = 1; 
@@ -67,6 +55,21 @@ int main(void) {
                 screen = 0;
             }
 
+*/
+    MCP4725_SetValue(dac_value);
+
+		// Toggle between high and low values
+		if (dac_value == dac_value_high) {
+			dac_value = dac_value_low;  // Switch to low value
+			} else {
+			dac_value = dac_value_high;  // Switch to high value
+		}
+		
+		int delay_value = (int)delay * 1000;
+		while(delay_value > 0){
+			_delay_us(1);
+			--delay_value;
+		}
             // Update LCD with Amplitude, Frequency, and Waveform
             lq_setCursor(&device, 0, 0);
             lq_print(&device, "Amplitude");
@@ -313,11 +316,6 @@ int main(void) {
     }
 }
 
-
-void MCP4725_SetValue (uint16_t value)(
-    i2c_master_start(MCP4725_ADDR, I2C_WRITE);
-    i2c_master_write((data << 8) & 0x0F);
-    i
 
 
 
