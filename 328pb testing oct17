@@ -1,0 +1,438 @@
+#include <avr/io.h>
+#include "liquid_crystal_i2c.h"
+#include <util/delay.h>
+#include "i2c_master.h"
+#include <stdio.h>
+#include "waveform.h" 
+#include <avr/pgmspace.h>
+
+#define MCP4725_ADDR 0X62 // MCP4725 DAC address
+#define F_CPU 16000000UL
+
+
+int main(void) {
+    // Initialize I2C and LCD
+    i2c_master_init(I2C_SCL_FREQUENCY_100);
+	i2c_master_init_dac(I2C_SCL_FREQUENCY_400);													//DAC MUST BE ON I2C 0 REGISTERS
+    LiquidCrystalDevice_t device = lq_init(0x27, 20, 4, LCD_5x8DOTS);
+    lq_turnOnBacklight(&device);  // Turn on the backlight
+    
+    // Configure buttons
+    DDRD &= (1<<2);  // Select button
+    DDRD &= (1<<4);  // Up button
+    DDRD &= (1<<7);  // Down button
+    DDRB &= (1<<0);  // Switch button
+
+    // Variables
+    uint8_t vol_num = 50;
+    uint8_t fsm = 0;
+    char vol_str[30];
+    char freq_str[30];
+    
+	// Store multiple strings in flash memory using PROGMEM
+	
+
+	// Create an array of pointers to the strings
+	char waveform[3][10] = {"Sine", "Square", "Triangle"};
+	
+    uint8_t waveform_id = 0;
+    
+	const uint16_t frequency[] = {20, 50, 100, 200, 300, 500, 700, 1000, 1200, 1500}; //fixed the numbers
+    uint8_t freq_id = 0;
+    uint8_t screen = 0; //1 for Aux mode, 0 for Tone Generator Mode
+    
+    // Main loop
+    while (1) {
+        // Check for AUX mode
+     /*   if (PINB & (1 << 0)) {
+            if (screen == 0) {
+                lq_clear(&device);
+                screen = 1; 
+            }
+            lq_setCursor(&device, 1, 0);
+            lq_print(&device, "AUX MODE");
+        } else {
+            // Handle tone generator mode
+            if (screen == 1) {
+                lq_clear(&device);
+                lq_setCursor(&device, 1, 0);
+                lq_print(&device, "TONE GENERATOR MODE");
+                _delay_ms(2000);
+                lq_clear(&device);
+                screen = 0;
+            }
+*/
+
+		
+            // Update LCD with Amplitude, Frequency, and Waveform
+            lq_setCursor(&device, 0, 0);
+            lq_print(&device, "Amplitude");
+            lq_setCursor(&device, 1, 0);
+            lq_print(&device, "Frequency");
+            lq_setCursor(&device, 2, 0);
+            lq_print(&device, "Waveform");
+
+            // Display Amplitude
+            lq_setCursor(&device, 0, 17);
+            sprintf(vol_str, "%d", vol_num);
+            lq_print(&device, vol_str);
+            if (vol_num < 10) {
+                lq_print(&device, "  ");
+            } else if (vol_num < 100) {
+                lq_print(&device, " ");
+            }
+
+            // Display Frequency
+            lq_setCursor(&device, 1, 18);
+            lq_print(&device, "Hz");
+
+            lq_setCursor(&device, 1, 14);
+            switch(freq_id) {
+                case 0: case 1:
+                    lq_print(&device, "  ");
+                    break;
+                case 2: case 3: case 4: case 5: case 6:
+                    lq_print(&device, " ");
+                    break;
+                
+            }
+            sprintf(freq_str, "%d", frequency[freq_id]);
+            lq_print(&device, freq_str);
+
+            // Display Waveform
+            lq_setCursor(&device, 2, 12);
+            switch(waveform_id) {
+                case 0:  // Sine
+                    lq_print(&device, "    ");
+                    break;
+                case 1:  // Square
+                    lq_print(&device, "  ");
+                    break;
+                /*case 3:  // Ramp is kil
+                    lq_print(&device, "    ");
+                    break;*/
+            }
+            
+			lq_print(&device, waveform[waveform_id]);
+
+            // FSM for button inputs
+            switch(fsm) {
+                case 0:
+                    lq_setCursor(&device, 0, 9);
+                    lq_print(&device, "<");
+                    lq_setCursor(&device, 1, 9);
+                    lq_print(&device, " ");
+                    lq_setCursor(&device, 2, 8);
+                    lq_print(&device, " ");
+                    lq_setCursor(&device, 0, 16);
+                    lq_print(&device, " ");
+                    lq_setCursor(&device, 3, 0);
+                    lq_print(&device, "Up    Down    Select");
+
+                     if (PIND & (1 << 2))
+                     {
+	                     _delay_ms(50);  // Add a small delay for debouncing
+
+	                     // Check again to confirm that the button is still pressed
+	                     if (PIND & (1 << 2))
+	                     {
+		                     // Wait until the button is released
+		                     while (PIND & (1 << 2)) {}
+								 fsm = 3;
+							 }
+							 
+						 }
+				    /*if (PIND & (1 << 2)) {
+                        while(PIND & (1 << 2)) {}
+                        fsm = 3;
+                    }*/
+                    if (PIND & (1 << 4)) {
+                        while(PIND & (1 << 4)) {}
+                        fsm = 2;
+                    }
+                    if (PIND & (1 << 7)) {
+                        while(PIND & (1 << 7)) {}
+                        fsm = 1;
+                    }
+                    break;
+                
+                case 1:
+                    lq_setCursor(&device, 0, 9);
+                    lq_print(&device, " ");
+                    lq_setCursor(&device, 1, 9);
+                    lq_print(&device, "<");
+                    lq_setCursor(&device, 2, 8);
+                    lq_print(&device, " ");
+                    lq_setCursor(&device, 1, 12);
+                    lq_print(&device, " ");
+                    lq_setCursor(&device, 3, 0);
+                    lq_print(&device, "Up    Down    Select");
+					
+					if (PIND & (1 << 2))
+					{
+						_delay_ms(50);  // Add a small delay for debouncing
+
+						// Check again to confirm that the button is still pressed
+						if (PIND & (1 << 2))
+						{
+							// Wait until the button is released
+							while (PIND & (1 << 2)) {}
+							fsm = 4;
+						}
+						
+					}
+                    //if (PIND & (1 << 2)) {
+                        //while(PIND & (1 << 2)) {}
+                        //fsm = 4;
+                    //}
+                    if (PIND & (1 << 4)) {
+                        while(PIND & (1 << 4)) {}
+                        fsm = 0;
+                    }
+                    if (PIND & (1 << 7)) {
+                        while(PIND & (1 << 7)) {}
+                        fsm = 2;
+                    }
+                    break;
+                
+                case 2:
+                    lq_setCursor(&device, 0, 9);
+                    lq_print(&device, " ");
+                    lq_setCursor(&device, 1, 9);
+                    lq_print(&device, " ");
+                    lq_setCursor(&device, 2, 8);
+                    lq_print(&device, "<");
+                    lq_setCursor(&device, 2, 11);
+                    lq_print(&device, " ");
+                    lq_setCursor(&device, 3, 0);
+                    lq_print(&device, "Up    Down    Select");
+
+                    if (PIND & (1 << 2))
+                    {
+	                    _delay_ms(50);  // Add a small delay for debouncing
+
+	                    // Check again to confirm that the button is still pressed
+	                    if (PIND & (1 << 2))
+	                    {
+		                    // Wait until the button is released
+		                    while (PIND & (1 << 2)) {}
+		                    fsm = 5;
+	                    }
+	                    
+                    }
+					//if (PIND & (1 << 2)) {
+                        //while(PIND & (1 << 2)) {}
+                        //fsm = 5;
+                    //}
+                    if (PIND & (1 << 4)) {
+                        while(PIND & (1 << 4)) {}
+                        fsm = 1;
+                    }
+                    if (PIND & (1 << 7)) {
+                        while(PIND & (1 << 7)) {}
+                        fsm = 0;
+                    }
+                    break;
+
+                case 3:
+                    lq_setCursor(&device, 0, 16);
+                    lq_print(&device, ">");
+                    lq_setCursor(&device, 0, 9);
+                    lq_print(&device, " ");
+                    lq_setCursor(&device, 3, 0);
+                    lq_print(&device, "Up    Down    Back");
+
+                    if (PIND & (1 << 4)) {
+                        while(PIND & (1 << 4) && vol_num < 100) {
+                            vol_num += 1;
+                            lq_setCursor(&device, 0, 17);
+                            sprintf(vol_str, "%d", vol_num);
+                            lq_print(&device, vol_str);
+
+                            if (vol_num < 10) {
+                                lq_print(&device, "  ");
+                            } else if (vol_num < 100) {
+                                lq_print(&device, " ");
+                            }
+                            _delay_ms(250);
+                        }
+                    }
+
+                    if (PIND & (1 << 7)) {
+                        while(PIND & (1 << 7) && vol_num > 0) {
+                            vol_num -= 1;
+                            lq_setCursor(&device, 0, 17);
+                            sprintf(vol_str, "%d", vol_num);
+                            lq_print(&device, vol_str);
+
+                            if (vol_num < 10) {
+                                lq_print(&device, "  ");
+                            } else if (vol_num < 100) {
+                                lq_print(&device, " ");
+                            }
+                            _delay_ms(250);
+                        }
+                    }
+					if (PIND & (1 << 2))
+					{
+						_delay_ms(50);  // Add a small delay for debouncing
+
+						// Check again to confirm that the button is still pressed
+						if (PIND & (1 << 2))
+						{
+							// Wait until the button is released
+							while (PIND & (1 << 2)) {}
+							fsm = 0;
+						}
+						
+					}
+
+                    //if (PIND & (1 << 2)) {
+                        //while(PIND & (1 << 2)) {}
+                        //fsm = 0;
+                    //}
+                    break;
+                
+                case 4:
+                    lq_setCursor(&device, 1, 12);
+                    lq_print(&device, ">");
+                    lq_setCursor(&device, 1, 9);
+                    lq_print(&device, " ");
+                    lq_setCursor(&device, 3, 0);
+                    lq_print(&device, "Up    Down    Back");
+
+                    if (PIND & (1 << 4)) {
+                        while(PIND & (1 << 4)) {}
+                        if (freq_id == 9) {
+                            freq_id = 0;
+                        } else {
+                            freq_id += 1;
+                        }
+                    }
+
+                    if (PIND & (1 << 7)) {
+                        while(PIND & (1 << 7)) {}
+                        if (freq_id == 0) {
+                            freq_id = 9;
+                        } else {
+                            freq_id -= 1;
+                        }
+                    }
+					if (PIND & (1 << 2))
+					{
+						_delay_ms(50);  // Add a small delay for debouncing
+
+						// Check again to confirm that the button is still pressed
+						if (PIND & (1 << 2))
+						{
+							// Wait until the button is released
+							while (PIND & (1 << 2)) {}
+							fsm = 1;
+						}
+						
+					}
+
+                    //if (PIND & (1 << 2)) {
+                        //while(PIND & (1 << 2)) {}
+                        //fsm = 1;
+                    //}
+                    break;
+
+                case 5:
+                    lq_setCursor(&device, 2, 11);
+                    lq_print(&device, ">");
+                    lq_setCursor(&device, 2, 8);
+                    lq_print(&device, " ");
+                    lq_setCursor(&device, 3, 0);
+                    lq_print(&device, "Up    Down    Back");
+
+                    if (PIND & (1 << 4)) {
+                        while(PIND & (1 << 4)) {}
+                        if (waveform_id == 3) {
+                            waveform_id = 0;
+                        } else {
+                            waveform_id += 1;
+                        }
+                    }
+
+                    if (PIND & (1 << 7)) {
+                        while(PIND & (1 << 7)) {}
+                        if (waveform_id == 0) {
+                            waveform_id = 3;
+                        } else {
+                            waveform_id -= 1;
+                        }
+                    }
+					if (PIND & (1 << 2))
+					{
+						_delay_ms(50);  // Add a small delay for debouncing
+
+						// Check again to confirm that the button is still pressed
+						if (PIND & (1 << 2))
+						{
+							// Wait until the button is released
+							while (PIND & (1 << 2)) {}
+							fsm = 2;
+						}
+						
+					}
+
+                    //if (PIND & (1 << 2)) {
+                        //while(PIND & (1 << 2)) {}
+                        //fsm = 2;
+                    //}
+                    break;
+            }
+			Generate_Square_Wave( vol_num,  frequency[freq_id]);
+			switch(waveform_id){
+				case 0:
+					//Generate_Sine_Wave( vol_num,  pgm_read_byte(&frequency[freq_id]));
+					break;
+				case 1:
+					Generate_Square_Wave( vol_num,  frequency[freq_id]);
+					break;
+				case 2:
+					Generate_Triangle_Wave( vol_num,  frequency[freq_id]);
+					break;
+			}
+						}
+					}
+						
+        
+    
+					
+					
+	
+
+
+
+
+
+/*
+ * 328PB testing.c
+ *
+ * Created: 10/17/2024 5:03:37 PM
+ * Author : david
+ */ 
+
+//#include <avr/io.h>
+//#include "liquid_crystal_i2c.h"
+//#include <util/delay.h>
+//#include "i2c_master.h"
+//#include <stdio.h>
+//#include "waveform.h"
+//#include <avr/pgmspace.h>
+//
+//#define MCP4725_ADDR 0X62 // MCP4725 DAC address
+//#define F_CPU 16000000UL
+//
+//int main(void)
+//{
+	//
+	//while (1)
+	//{
+		 //
+		//Generate_Square_Wave(50, 20);
+		//
+	//}
+//}
