@@ -30,6 +30,7 @@ int main(void)
 		
 		
 		if (PIND & (1 << 2)) {
+			while(PIND & (1 << 2)) {}
 			x+=1;
 			sprintf(x_str, "%d", x);
 			lq_print(&device, x_str);
