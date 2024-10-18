@@ -1,11 +1,10 @@
-
 #include <avr/io.h>
 #include "liquid_crystal_i2c.h"
 #include <util/delay.h>
 #include "i2c_master.h"
 #include <stdio.h>
 #include "waveform.h" 
-
+#include <avr/pgmspace.h>
 
 #define MCP4725_ADDR 0X62 // MCP4725 DAC address
 #define F_CPU 16000000UL
@@ -24,15 +23,24 @@ int main(void) {
     DDRB &= (1<<0);  // Switch button
 
     // Variables
-    int vol_num = 50;
-    int fsm = 0;
+    uint8_t vol_num = 50;
+    uint8_t fsm = 0;
     char vol_str[30];
     char freq_str[30];
-    char waveform[4][10] = {"Sine", "Square", "Triangle", "Ramp"};
-    int waveform_id = 0;
-    int frequency[10] = {50, 100, 200, 300, 440, 500, 1000, 2000, 5000, 10000};
-    int freq_id = 0; 
-    int screen = 0;
+    
+	// Store multiple strings in flash memory using PROGMEM
+	//const char sine_string[] = "Sine";
+	//const char square_string[] = "Square";
+	//const char triangle_string[] = "Triangle";
+
+	// Create an array of pointers to the strings
+	const char waveform[4][10] = {"Sine", "Square", "Triangle"};
+	char waveform_copy[8];
+    uint8_t waveform_id = 0;
+    
+	const uint16_t frequency[] = {20, 50, 100, 200, 300, 500, 700, 1000, 1200, 1500}; //fixed the numbers
+    uint8_t freq_id = 0;
+    uint8_t screen = 0; //1 for Aux mode, 0 for Tone Generator Mode
     
     // Main loop
     while (1) {
@@ -56,20 +64,7 @@ int main(void) {
             }
 
 */
-    MCP4725_SetValue(dac_value);
-
-		// Toggle between high and low values
-		if (dac_value == dac_value_high) {
-			dac_value = dac_value_low;  // Switch to low value
-			} else {
-			dac_value = dac_value_high;  // Switch to high value
-		}
 		
-		int delay_value = (int)delay * 1000;
-		while(delay_value > 0){
-			_delay_us(1);
-			--delay_value;
-		}
             // Update LCD with Amplitude, Frequency, and Waveform
             lq_setCursor(&device, 0, 0);
             lq_print(&device, "Amplitude");
@@ -92,17 +87,15 @@ int main(void) {
             lq_setCursor(&device, 1, 18);
             lq_print(&device, "Hz");
 
-            lq_setCursor(&device, 1, 13);
+            lq_setCursor(&device, 1, 14);
             switch(freq_id) {
-                case 0:
-                    lq_print(&device, "   ");
-                    break;
-                case 1: case 2: case 3: case 4: case 5:
+                case 0: case 1:
                     lq_print(&device, "  ");
                     break;
-                case 6: case 7: case 8:
+                case 2: case 3: case 4: case 5: case 6:
                     lq_print(&device, " ");
                     break;
+                
             }
             sprintf(freq_str, "%d", frequency[freq_id]);
             lq_print(&device, freq_str);
@@ -116,11 +109,12 @@ int main(void) {
                 case 1:  // Square
                     lq_print(&device, "  ");
                     break;
-                case 3:  // Ramp
+                /*case 3:  // Ramp is kil
                     lq_print(&device, "    ");
-                    break;
+                    break;*/
             }
-            lq_print(&device, waveform[waveform_id]);
+            
+			lq_print(&device, waveform[waveform_id]);
 
             // FSM for button inputs
             switch(fsm) {
@@ -312,15 +306,18 @@ int main(void) {
                     }
                     break;
             }
+			switch(waveform_id){
+				case 0:
+					//Generate_Sine_Wave( vol_num,  pgm_read_byte(&frequency[freq_id]));
+					break;
+				case 1:
+					Generate_Square_Wave( vol_num,  frequency[freq_id]);
+					break;
+				case 2:
+					Generate_Triangle_Wave( vol_num,  frequency[freq_id]);
+					break;
+			}
         }
     }
-}
+						
 
-
-
-
-
-
-
-
-)
