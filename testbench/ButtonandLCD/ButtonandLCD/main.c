@@ -23,6 +23,7 @@ int main(void)
 		
 		
 		if (PIND & (1 << 2)) {
+			_delay_ms(50);
 			while(PIND & (1 << 2)) {}
 			x+=1;
 			sprintf(x_str, "%d", x);
