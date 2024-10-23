@@ -50,6 +50,7 @@ int main(void)
     while (1) 
     {	
 		if(buttonPressed){
+			x += 1;
 			sprintf(x_str, "%d", x);
 			lq_print(&device, x_str);
 			lq_setCursor(&device, 1, 0);
