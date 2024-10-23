@@ -19,6 +19,7 @@ volatile uint8_t buttonPressed = 0;			//volatile keywords allows variables to be
 ISR(PCINT2_vect) {
 	// Check if button is pressed (PD2 is LOW)
 	if (PIND & (1 << 2)) {
+		_delay_ms(50);
 		while(PIND & (1 << 2)) {}				//busy while loop for "debouncing"
 		buttonPressed = 1;
 		
