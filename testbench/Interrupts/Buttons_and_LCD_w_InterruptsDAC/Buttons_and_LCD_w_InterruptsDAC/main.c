@@ -15,6 +15,8 @@
 #include "liquid_crystal_i2c.h"
 #include "i2c_master.h"
 
+#define SCL_CLOCK 400000L
+
 #define MCP4725_ADDR 0x62 // MCP4725 I2C address
 
 volatile uint8_t buttonPressed = 0;			//volatile keywords allows variables to be changed using interrupts
@@ -30,7 +32,11 @@ ISR(PCINT2_vect) {
 	}
 	
 }
-
+void I2C_Init(void) {
+	// Set the bit rate for 400 kHz I2C
+	TWSR = 0x00;  // Prescaler set to 1
+	TWBR = ((F_CPU / SCL_CLOCK) - 16) / 2;  // Set bit rate register for 400kHz
+}
 // I2C Start condition
 void I2C_Start(void) {
 	TWCR1 = (1<<TWSTA) | (1<<TWEN) | (1<<TWINT);  // Send start condition
@@ -61,7 +67,8 @@ void MCP4725_SetValue(uint16_t value) {
 int main(void)
 {
     /* Replace with your application code */
-	DDRD &= (1<<2);		//sets pin D2 to input
+	 I2C_Init();
+	 DDRD &= (1<<2);		//sets pin D2 to input
 	
 	 PCICR |= (1 << PCIE2);  // Enable PCINT16-23 group interrupt
 	 PCMSK2 |= (1 << PCINT18);  // Enable interrupt for PD2 (PCINT18)
