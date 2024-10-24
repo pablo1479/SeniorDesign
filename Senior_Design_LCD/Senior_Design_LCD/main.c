@@ -35,7 +35,8 @@ int main(void)
 	
 	i2c_master_init(I2C_SCL_FREQUENCY_100);					//SET LCD TO I2C0 PINS
 	LiquidCrystalDevice_t device = lq_init(0x27, 20, 4, LCD_5x8DOTS);
-	
+	lq_turnOnBacklight(&device);
+	 
 	 lq_setCursor(&device, 0, 0);
 	 lq_print(&device, "Amplitude");
 	 lq_setCursor(&device, 1, 0);
@@ -48,7 +49,13 @@ int main(void)
 	 sei();
 
 	
-     
+     lq_setCursor(&device, 0, 17);
+     sprintf(vol_str, "%d", vol_num);
+     lq_print(&device, vol_str);
+	 lq_print(&device, " ");
+	 
+	 lq_setCursor(&device, 0, 9);
+	 lq_print(&device, "<");
 	 // Display Frequency
 	 
 
@@ -64,6 +71,9 @@ int main(void)
 	 lq_setCursor(&device, 2, 12);    
      lq_print(&device, "    ");  
      lq_print(&device, waveform[waveform_id]);
+	 
+	 lq_setCursor(&device, 3, 0);
+	 lq_print(&device, "Up    Down    Select");
 	
 	while (1) 
     {
@@ -79,7 +89,7 @@ int main(void)
 					lq_setCursor(&device, 0, 9);
 					lq_print(&device, " ");
 					lq_setCursor(&device, 3, 0);
-					lq_print(&device, "Up    Down    Back");
+					lq_print(&device, "Up    Down      Back");
 				break;
 				
 				case 1:
@@ -89,7 +99,7 @@ int main(void)
 					lq_setCursor(&device, 1, 9);
 					lq_print(&device, " ");
 					lq_setCursor(&device, 3, 0);
-					lq_print(&device, "Up    Down    Back");
+					lq_print(&device, "Up    Down      Back");
 					
 					
 					
@@ -102,7 +112,7 @@ int main(void)
 					lq_setCursor(&device, 2, 8);
 					lq_print(&device, " ");
 					lq_setCursor(&device, 3, 0);
-					lq_print(&device, "Up    Down    Back");
+					lq_print(&device, "Up    Down      Back");
 				
 				break;
 				
