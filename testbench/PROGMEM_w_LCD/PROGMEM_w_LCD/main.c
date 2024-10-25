@@ -25,7 +25,7 @@ int main(void)
 	lq_setCursor(&device, 1, 0);		// moving cursor to the next line
 	lq_turnOnBacklight(&device);
 	const char test[]  PROGMEM = "Hello World";
-	char buffer[11];				//if error maybe fix this?
+	char buffer[12];				//if error maybe fix this?
 	strcpy_P(buffer, test);			//if this works try putting this in one line
 	lq_print(&device, buffer);
 	while (1)
