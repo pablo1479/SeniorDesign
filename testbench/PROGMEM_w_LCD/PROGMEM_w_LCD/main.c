@@ -15,6 +15,8 @@
 
 #include <avr/pgmspace.h> //Include flash memory library
 
+const char test[]  PROGMEM = "Hello World";
+const uint16_t test_int PROGMEM = 200;
 
 int main(void)
 {
@@ -24,10 +26,18 @@ int main(void)
 	
 	lq_setCursor(&device, 1, 0);		// moving cursor to the next line
 	lq_turnOnBacklight(&device);
-	const char test[]  PROGMEM = "Hello World";
+	
 	char buffer[12];				//if error maybe fix this?
 	strcpy_P(buffer, test);			//if this works try putting this in one line
 	lq_print(&device, buffer);
+	
+										//progmem with integers
+	/*lq_setCursor(&device, 2, 0);
+	uint16_t value = pgm_read_word(&test_int);
+	char value_str[4];	
+	sprintf(value_str, "%d", value);
+	lq_print(&device, value_str);*/
+	
 	while (1)
 	{
 		
