@@ -17,6 +17,9 @@
 volatile uint8_t selectPressed = 0;
 volatile uint8_t upPressed = 0;
 volatile uint8_t downPressed = 0;
+
+volatile uint8_t waveform_id = 0;
+volatile uint8_t dac_state = 0;
 int main(void)
 {
     /* Replace with your application code */
@@ -29,7 +32,7 @@ int main(void)
 	char vol_str[4];
 	char freq_str[5];
 	char waveform[3][9] = {"Sine", "Square", "Triangle"};
-	uint8_t waveform_id = 0;
+	
 	const uint16_t frequency[] = {20, 50, 100, 200, 300, 500, 700, 1000, 1200, 1500};
 	uint8_t freq_id = 0;
 	uint8_t screen = 0;
@@ -74,6 +77,15 @@ int main(void)
 	 
 	 lq_setCursor(&device, 3, 0);
 	 lq_print(&device, "Up    Down    Select");
+	 
+	 int freq = 100;			//adjust this to adjust the frequency of the square wave
+	 double period = (1/freq)/2;
+	 TCCR1B |= (1 << WGM12);	
+	 TIMSK1 |= (1 << OCIE1A);
+	 sei();
+	 
+	 OCR1A = (int)period * 16000000 / 256;  // (16e6 / (64 * 1000)) - 1								this should be 5 ms
+	 TCCR1B |= (1 << CS12);
 	
 	while (1) 
     {
@@ -86,7 +98,10 @@ int main(void)
 			break;
 			
 			case 1: //Square waveform
-				Generate_Square_Wave(vol_num, frequency[freq_id]);
+				//Generate_Square_Wave(vol_num, frequency[freq_id]);
+				
+				
+				
 			break;
 			
 			case 2: //Triangle waveform
@@ -391,3 +406,18 @@ ISR(PCINT2_vect) {
 	}
 }
 
+ISR(TIMER1_COMPA_vect) {
+	switch(waveform_id){
+		case 1:
+		if(dac_state ==0){
+			MCP4725_SetValue(4095);
+			dac_state = 1;
+		}
+		else if(dac_state ==1){
+			MCP4725_SetValue(0);
+			dac_state = 0;
+			
+		}
+		break;
+	}
+}
