@@ -36,6 +36,7 @@ int main(void)
 	
 	i2c_master_init(I2C_SCL_FREQUENCY_100);					//SET LCD TO I2C0 PINS
 	LiquidCrystalDevice_t device = lq_init(0x27, 20, 4, LCD_5x8DOTS);
+	lq_turnOnBacklight(&device);
 	
 	 lq_setCursor(&device, 0, 0);
 	 lq_print(&device, "Amplitude");
