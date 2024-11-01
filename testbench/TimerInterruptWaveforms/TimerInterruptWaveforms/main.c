@@ -46,7 +46,7 @@ void MCP4725_SetValue(uint16_t value) {
 	I2C_Stop();
 }
 
-volatile uint16_t dac_value = 0;		//0 = square, 1 = triangle
+volatile int16_t dac_value = 0;		//0 = square, 1 = triangle
 volatile uint8_t direction = 1;		//0 = down, 1 = up
 ISR(TIMER1_COMPA_vect) {
 	switch(waveform_id){
@@ -69,7 +69,7 @@ ISR(TIMER1_COMPA_vect) {
 				if (dac_value >=  4095) {  // If the peak is reached, start falling
 					direction = 0;  // Switch to falling
 					dac_value = 4095;
-					MCP4725_SetValue(4095);
+					
 				}
 			}
 			else {
@@ -77,7 +77,7 @@ ISR(TIMER1_COMPA_vect) {
 				if (dac_value <= 0) {  // If the bottom is reached, start rising
 					direction = 1;  // Switch to rising
 					dac_value = 0;
-					MCP4725_SetValue(0);
+					
 				}
 			}
 	}
@@ -85,16 +85,19 @@ ISR(TIMER1_COMPA_vect) {
 int main(void)
 {
     /* Replace with your application code */
+	int freq = 100;				//adjust this to adjust the frequency of the square wave
+	double period = (1/freq)/2;
+	
 	
 	I2C_Init();
 	TCCR1B |= (1 << WGM12);													//CTC Mode
 
 	if (waveform_id ==0){
-		OCR1A = 311;  // (16e6 / (64 * 1000)) - 1								this should be 5 ms
+		OCR1A = (int)period * 16000000 / 256;  // (16e6 / (64 * 1000)) - 1								this should be 5 ms
 		TCCR1B |= (1 << CS12);									// Set prescaler to 256 and start the timer
 	}
 	else{
-		OCR1A = 30;
+		OCR1A = 15;
 		TCCR1B |= (1 << CS11) || (1 << CS10); //prescale to 64
 	}
 	
