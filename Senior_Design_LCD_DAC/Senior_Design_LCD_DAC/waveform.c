@@ -213,7 +213,7 @@ void Generate_Square_Wave(uint16_t amplitude, uint16_t frequency) {
 void Generate_Triangle_Wave(uint16_t amplitude, uint16_t frequency) {
 	// Implement triangle wave generation logic using the MCP4725_SetValue function
 	
-	uint16_t  dac_value = 0;  // Start at the minimum value
+	int16_t  dac_value = 0;  // Start at the minimum value
 	uint16_t step_size = (uint16_t)50 * (amplitude/100);  // Step size for each increment/decrement 1500 steps 2.16kHZ
 	uint8_t direction = 1;  // 1 means rising, 0 means falling
 
