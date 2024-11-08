@@ -91,13 +91,15 @@ int main(void)
     }
 }
 
-volatile uint16_t i = 0;
+volatile uint8_t i = 0;
+int vol_num = 100;
 ISR(TIMER1_COMPA_vect) {
 	//MCP4725_SetValue(i);
 	//MCP4725_SetValue(sine_lut[i]);
 	//MCP4725_SetValue(triangle_lut[i]);
-	i +=1;
-	if (i >= 255){
-		i = 0;
-	}
+	//MCP4725_SetValue(triangle_lut[i]);
+	MCP4725_SetValue(triangle_lut[i] / 100 * vol_num);
+	i+=32;
+	
+	
 }
