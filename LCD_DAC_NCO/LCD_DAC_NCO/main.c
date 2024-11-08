@@ -59,6 +59,8 @@ const uint16_t triangle_lut [256] = {	0, 32, 64, 97, 129, 161, 193, 226, 258, 29
 uint8_t INCR = 1;
 volatile uint16_t vol_sq = 4095;
 volatile uint8_t i = 0;
+
+uint8_t vol_num = 50;
 int main(void)
 {
     /* Replace with your application code */
@@ -69,7 +71,7 @@ int main(void)
 			//amplitude of the tone generator
 	uint8_t fsm = 0;			//state machine that determines what setting the user is on
 	char vol_str[4];
-	uint8_t vol_num = 50;
+	
 	char freq_str[5];
 	char waveform[3][9] = {"Sine", "Square", "Triangle"};
 	
@@ -131,9 +133,8 @@ int main(void)
 	 uint16_t freq_sq = 20;
 	 double period = (1.0/freq_sq) / 2;
 	 uint16_t timer = period *(16000000.0 / 256.0) - 1;
-	 OCR1A = timer;
-	 								
-	 TCCR1B |= (1 << CS12); //prescaler 256
+	TCCR1B |= (1 << CS10);// | (1<<CS12);													// prescaler 1024
+	OCR1A = 1; //prescaler 256
 	
 	while (1) 
     {
@@ -317,7 +318,7 @@ int main(void)
 						}
 					else{
 						TCCR1B &= ~(1 << CS12) & ~(1 << CS11) & ~(1 << CS10);
-						TCCR1B |= (1 << CS10);// | (1<<CS12);													// prescaler 1024
+						TCCR1B |= (1 << CS10);// | (1<<CS12);													// prescaler 1
 						OCR1A = 1;  // (16e6 / (64 * 1000)) - 1
 						switch(freq_id){
 							case 0:
@@ -365,6 +366,49 @@ int main(void)
 					}
 					
 					lq_print(&device, waveform[waveform_id]);
+					
+					i = 0;
+					if(waveform_id ==1){
+						TCCR1B &= ~(1 << CS12) & ~(1 << CS11) & ~(1 << CS10);
+						TCCR1B |= (1 << CS12); // Prescaler 256
+						freq_sq = frequency[freq_id];
+						period = (1.0/freq_sq)/2;
+						timer = period *(16000000.0 / 256.0) - 1;
+						OCR1A = timer;
+						
+					}
+					else{
+						TCCR1B &= ~(1 << CS12) & ~(1 << CS11) & ~(1 << CS10);
+						TCCR1B |= (1 << CS10);// | (1<<CS12);													// prescaler 1024
+						OCR1A = 1;  // (16e6 / (64 * 1000)) - 1
+						switch(freq_id){
+							case 0:
+							INCR = 1;
+							break;
+							
+							case 1:
+							INCR = 2;
+							break;
+							
+							case 2:
+							INCR = 4;
+							break;
+							
+							case 3:
+							INCR = 8;
+							break;
+							
+							case 4:
+							INCR = 16;
+							break;
+							
+							case 5:
+							INCR = 32;
+							break;
+							
+						}
+					}
+					break;
 				break;
 				
 			}
@@ -503,6 +547,49 @@ int main(void)
 					}
 					
 					lq_print(&device, waveform[waveform_id]);
+					
+					i = 0;
+					if(waveform_id ==1){
+						TCCR1B &= ~(1 << CS12) & ~(1 << CS11) & ~(1 << CS10);
+						TCCR1B |= (1 << CS12); // Prescaler 256
+						freq_sq = frequency[freq_id];
+						period = (1.0/freq_sq)/2;
+						timer = period *(16000000.0 / 256.0) - 1;
+						OCR1A = timer;
+						
+					}
+					else{
+						TCCR1B &= ~(1 << CS12) & ~(1 << CS11) & ~(1 << CS10);
+						TCCR1B |= (1 << CS10);// | (1<<CS12);													// prescaler 1024
+						OCR1A = 1;  // (16e6 / (64 * 1000)) - 1
+						switch(freq_id){
+							case 0:
+							INCR = 1;
+							break;
+							
+							case 1:
+							INCR = 2;
+							break;
+							
+							case 2:
+							INCR = 4;
+							break;
+							
+							case 3:
+							INCR = 8;
+							break;
+							
+							case 4:
+							INCR = 16;
+							break;
+							
+							case 5:
+							INCR = 32;
+							break;
+							
+						}
+					}
+					break;
 				break;
 				
 			}
@@ -551,12 +638,12 @@ ISR(TIMER1_COMPA_vect) {
 		}
 		break;
 		case 2:
-			MCP4725_SetValue(triangle_lut[i]);
-			//MCP4725_SetValue(triangle_lut[i] / 100 * vol_num);
+			//MCP4725_SetValue(triangle_lut[i]);
+			MCP4725_SetValue(triangle_lut[i] / 100 * vol_num);
 			i+=INCR;
 		break;
 		case 0:
-			MCP4725_SetValue(sine_lut[i]);
+			MCP4725_SetValue(sine_lut[i] / 100 * vol_num);
 			i+=INCR;
 		break;
 		
