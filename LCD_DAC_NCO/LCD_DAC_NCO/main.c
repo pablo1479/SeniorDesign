@@ -58,6 +58,7 @@ const uint16_t triangle_lut [256] = {	0, 32, 64, 97, 129, 161, 193, 226, 258, 29
 96, 64, 32, 0};
 uint8_t INCR = 1;
 volatile uint16_t vol_sq = 4095;
+volatile uint8_t i = 0;
 int main(void)
 {
     /* Replace with your application code */
@@ -303,6 +304,7 @@ int main(void)
 					}
 					sprintf(freq_str, "%d", frequency[freq_id]);
 					lq_print(&device, freq_str);
+					i = 0;
 					
 					if(waveform_id ==1){
 						TCCR1B &= ~(1 << CS12) & ~(1 << CS11) & ~(1 << CS10);
@@ -438,7 +440,7 @@ int main(void)
 					}
 					sprintf(freq_str, "%d", frequency[freq_id]);
 					lq_print(&device, freq_str);
-					
+					i = 0;
 					if(waveform_id ==1){
 						TCCR1B &= ~(1 << CS12) & ~(1 << CS11) & ~(1 << CS10);
 						TCCR1B |= (1 << CS12); // Prescaler 256
@@ -534,7 +536,7 @@ ISR(PCINT2_vect) {
 	}
 }
 
-volatile uint8_t i = 0;
+
 ISR(TIMER1_COMPA_vect) {
 	switch(waveform_id){
 		case 1:
@@ -550,6 +552,7 @@ ISR(TIMER1_COMPA_vect) {
 		break;
 		case 2:
 			MCP4725_SetValue(triangle_lut[i]);
+			//MCP4725_SetValue(triangle_lut[i] / 100 * vol_num);
 			i+=INCR;
 		break;
 		case 0:
