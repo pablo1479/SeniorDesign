@@ -18,7 +18,7 @@ volatile uint8_t selectPressed = 0;
 volatile uint8_t upPressed = 0;
 volatile uint8_t downPressed = 0;
 
-volatile uint8_t waveform_id = 0;
+volatile uint8_t waveform_id = 1;
 volatile uint8_t dac_state = 0;
 
 
@@ -57,10 +57,11 @@ const uint16_t triangle_lut [256] = {	0, 32, 64, 97, 129, 161, 193, 226, 258, 29
 	704, 672, 640, 608, 576, 544, 512, 480, 448, 416, 384, 352, 320, 288, 256, 224, 192, 160, 128,
 96, 64, 32, 0};
 uint8_t INCR = 1;
-volatile uint16_t vol_sq = 4095;
+
 volatile uint8_t i = 0;
 
 uint8_t vol_num = 50;
+volatile uint16_t vol_sq;
 int main(void)
 {
     /* Replace with your application code */
@@ -71,11 +72,12 @@ int main(void)
 			//amplitude of the tone generator
 	uint8_t fsm = 0;			//state machine that determines what setting the user is on
 	char vol_str[4];
+	vol_sq = (vol_num * 40.95);
 	
 	char freq_str[5];
 	char waveform[3][9] = {"Sine", "Square", "Triangle"};
 	
-	const uint16_t frequency[] = {48,96,192,384, 768, 1536};
+	const uint16_t frequency[] = {46,92,184,368, 736, 1472};
 	uint8_t freq_id = 0;
 	uint8_t screen = 0;
 	
@@ -117,7 +119,7 @@ int main(void)
 	 
 	 //Display Waveform
 	 lq_setCursor(&device, 2, 12);    
-     lq_print(&device, "    ");  
+     lq_print(&device, "  ");  
      lq_print(&device, waveform[waveform_id]);
 	 
 	 lq_setCursor(&device, 3, 0);
@@ -130,34 +132,22 @@ int main(void)
 	 sei();
 	 
 	 
-	 uint16_t freq_sq = 20;
+	 uint16_t freq_sq = 46;	//Initial value
 	 double period = (1.0/freq_sq) / 2;
 	 uint16_t timer = period *(16000000.0 / 256.0) - 1;
-	TCCR1B |= (1 << CS10);// | (1<<CS12);													// prescaler 1024
-	OCR1A = 1; //prescaler 256
+	
+	
+
+	TCCR1B |= (1 << CS12); // Prescaler 256
+	freq_sq = frequency[freq_id];
+	period = (1.0/freq_sq)/2;
+	timer = period *(16000000.0 / 256.0) - 1;
+	OCR1A = timer;
 	
 	while (1) 
     {
-		/*
-				Switch Case for Waveform ID that generates waveforms using the DAC
-		*/
-		switch(waveform_id){
-			case 0: //Sine waveform
-				//Generate_Sine_Wave(vol_num, frequency[freq_id]);
-			break;
-			
-			case 1: //Square waveform
-				//Generate_Square_Wave(vol_num, frequency[freq_id]);
-				
-				
-				
-			break;
-			
-			case 2: //Triangle waveform
-				//Generate_Triangle_Wave(vol_num, frequency[freq_id]);
-			
-			break;
-		}
+		
+		
 		
 		if(selectPressed){
 			switch(fsm){
@@ -319,7 +309,7 @@ int main(void)
 					else{
 						TCCR1B &= ~(1 << CS12) & ~(1 << CS11) & ~(1 << CS10);
 						TCCR1B |= (1 << CS10);// | (1<<CS12);													// prescaler 1
-						OCR1A = 1;  // (16e6 / (64 * 1000)) - 1
+						OCR1A = 1358;  // (16e6 / (64 * 1000)) - 1
 						switch(freq_id){
 							case 0:
 								INCR = 1;
@@ -380,7 +370,7 @@ int main(void)
 					else{
 						TCCR1B &= ~(1 << CS12) & ~(1 << CS11) & ~(1 << CS10);
 						TCCR1B |= (1 << CS10);// | (1<<CS12);													// prescaler 1024
-						OCR1A = 1;  // (16e6 / (64 * 1000)) - 1
+						OCR1A = 1358;  // (16e6 / (64 * 1000)) - 1
 						switch(freq_id){
 							case 0:
 							INCR = 1;
@@ -497,7 +487,7 @@ int main(void)
 					else{
 						TCCR1B &= ~(1 << CS12) & ~(1 << CS11) & ~(1 << CS10);
 						TCCR1B |= (1 << CS10);// | (1<<CS12);													// prescaler 1024
-						OCR1A = 1;  // (16e6 / (64 * 1000)) - 1
+						OCR1A = 1358;  // (16e6 / (64 * 1000)) - 1
 						switch(freq_id){
 							case 0:
 								INCR = 1;
@@ -561,7 +551,7 @@ int main(void)
 					else{
 						TCCR1B &= ~(1 << CS12) & ~(1 << CS11) & ~(1 << CS10);
 						TCCR1B |= (1 << CS10);// | (1<<CS12);													// prescaler 1024
-						OCR1A = 1;  // (16e6 / (64 * 1000)) - 1
+						OCR1A = 1358;  // (16e6 / (64 * 1000)) - 1
 						switch(freq_id){
 							case 0:
 							INCR = 1;
