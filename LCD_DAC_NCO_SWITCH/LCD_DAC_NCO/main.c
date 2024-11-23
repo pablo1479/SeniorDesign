@@ -17,7 +17,7 @@
 volatile uint8_t selectPressed = 0;
 volatile uint8_t upPressed = 0;
 volatile uint8_t downPressed = 0;
-volatile uint8_t switchFlag = 0;		//0 = N/A, 1 = SWITCH ON DAC, 2 = SWITCH OFF AUX
+volatile uint8_t switchFlag = 0;		//0 = N/A, 1 = SWITCH OPEN DAC, 2 = SWITCH CLOSED AUX
 
 volatile uint8_t waveform_id = 1;
 volatile uint8_t dac_state = 0;
@@ -70,8 +70,8 @@ int main(void)
 	DDRD &= (1<<4);		//up button
 	DDRD &= (1<<7);		//down button
 	
-	DDRD &= ~(1 << PD0);
-	PORTD |= (1 << PD0);
+	DDRD &= ~(1 << PD1);	//switch
+	PORTD |= (1 << PD1);	//pull-up resistor
 	
 			//amplitude of the tone generator
 	uint8_t fsm = 0;			//state machine that determines what setting the user is on
@@ -84,60 +84,75 @@ int main(void)
 	const uint16_t frequency[] = {46,92,184,368, 736, 1472};
 	uint8_t freq_id = 0;
 	
-	uint8_t screen = 0;													//DAC = 0, AUX = 1
+	uint8_t screen;													//DAC = 1, AUX = 2
 	
 	i2c_master_init(I2C_SCL_FREQUENCY_100);					//SET LCD TO I2C0 PINS
 	LiquidCrystalDevice_t device = lq_init(0x27, 20, 4, LCD_5x8DOTS);
 	lq_turnOnBacklight(&device);
 	
-	 lq_setCursor(&device, 0, 0);
-	 lq_print(&device, "Amplitude");
-	 lq_setCursor(&device, 1, 0);
-	 lq_print(&device, "Frequency");
-	 lq_setCursor(&device, 2, 0);
-	 lq_print(&device, "Waveform");
-	 
-	 PCICR |= (1 << PCIE2);  // Enable Pin Change Interrupt for PCINT16-23 group (Port D)
-	 PCMSK2 |= (1 << PCINT18) | (1 << PCINT20) | (1 << PCINT23) | (1<<PCINT16); //Enables interrupts for PD2, PD4, and PD7		UPDATE: PD0 
-	 sei();
-	 
-	 I2C_Init(); //initiates the DAC
+	if (!(PIND & (1 << PD1))) {
+		screen = 2;
 
+		lq_setCursor(&device, 1, 0); // moving cursor to the next line
+		lq_print(&device, "AUX MODE");
 	
-     lq_setCursor(&device, 0, 17);
-     sprintf(vol_str, "%d", vol_num);
-     lq_print(&device, vol_str);
-	 lq_print(&device, " ");
-	 
-	 lq_setCursor(&device, 0, 9);
-	 lq_print(&device, "<");
-	 // Display Frequency
-	 
+	}
+	else {
+		screen = 1;
 
-	 lq_setCursor(&device, 1, 14);
-	 lq_print(&device, "  ");
-	 sprintf(freq_str, "%d", frequency[freq_id]);
-	 lq_print(&device, freq_str);
+		lq_setCursor(&device, 0, 0);
+		lq_print(&device, "Amplitude");
+		lq_setCursor(&device, 1, 0);
+		lq_print(&device, "Frequency");
+		lq_setCursor(&device, 2, 0);
+		lq_print(&device, "Waveform");
+		
+		
+
+		
+		lq_setCursor(&device, 0, 17);
+		sprintf(vol_str, "%d", vol_num);
+		lq_print(&device, vol_str);
+		lq_print(&device, " ");
+		
+		lq_setCursor(&device, 0, 9);
+		lq_print(&device, "<");
+		// Display Frequency
+		
+
+		lq_setCursor(&device, 1, 14);
+		lq_print(&device, "  ");
+		sprintf(freq_str, "%d", frequency[freq_id]);
+		lq_print(&device, freq_str);
+		
+		lq_setCursor(&device, 1, 18);
+		lq_print(&device, "Hz");
+		
+		//Display Waveform
+		lq_setCursor(&device, 2, 12);
+		lq_print(&device, "  ");
+		lq_print(&device, waveform[waveform_id]);
+		
+		lq_setCursor(&device, 3, 0);
+		lq_print(&device, "Up    Down    Select");
+		
+	}
 	 
-	 lq_setCursor(&device, 1, 18);
-	 lq_print(&device, "Hz");
 	 
-	 //Display Waveform
-	 lq_setCursor(&device, 2, 12);    
-     lq_print(&device, "  ");  
-     lq_print(&device, waveform[waveform_id]);
 	 
-	 lq_setCursor(&device, 3, 0);
-	 lq_print(&device, "Up    Down    Select");
+	
 	 
-	 //int freq = 100;			//adjust this to adjust the frequency of the square wave
-	 
-	 TCCR1B |= (1 << WGM12);	
+	PCICR |= (1 << PCIE2);  // Enable Pin Change Interrupt for PCINT16-23 group (Port D)
+	PCMSK2 |= (1 << PCINT18) | (1 << PCINT20) | (1 << PCINT23) | (1<<PCINT17); //Enables interrupts for PD2, PD4, and PD7		UPDATE: PD1
+	sei();
+	
+	I2C_Init(); //initiates the DAC 
+	TCCR1B |= (1 << WGM12);	
 	 TIMSK1 |= (1 << OCIE1A);
 	 sei();
 	 
-	 
-	 uint16_t freq_sq = 46;	//Initial value
+	 //CALCULATES CLOCK FREQUENCY FOR INITIAL VALUES
+	 uint16_t freq_sq = 46;						//Initial value
 	 double period = (1.0/freq_sq) / 2;
 	 uint16_t timer = period *(16000000.0 / 256.0) - 1;
 	
@@ -149,12 +164,13 @@ int main(void)
 	timer = period *(16000000.0 / 256.0) - 1;
 	OCR1A = timer;
 	
+	
 	while (1) 
     {
-		if(switchFlag){													//SCREEN: DAC = 0, AUX = 1			SWITCH:  1 = SWITCH ON DAC, 2 = SWITCH OFF AUX
+		if(switchFlag){													//SCREEN: DAC = 1, AUX = 2			SWITCH:  1 = SWITCH OPEN DAC, 2 = SWITCH CLOSED AUX
 			
 			lq_clear(&device);
-			if(switchFlag == 1 && screen == 1){
+			if(switchFlag == 1 && screen == 2){
 				fsm = 0;
 				
 				//SETTINGS
@@ -196,13 +212,13 @@ int main(void)
 				lq_print(&device, "Up    Down    Select");
 				
 				
-				screen = 0;
+				screen = 1;
 			}
-			else if (switchFlag == 2 && screen == 0){
+			else if (switchFlag == 2 && screen == 1){
 				lq_setCursor(&device, 1, 0); // moving cursor to the next line
 				lq_print(&device, "AUX MODE");
 				
-				screen = 1;
+				screen = 2;
 			}
 			
 			switchFlag = 0;	
@@ -672,12 +688,12 @@ ISR(PCINT2_vect) {
 		downPressed = 1;  // Set flag for PD7 button press
 	}
 	
-	if (!(PIND & (1 << PD0))) { 
-		switchFlag = 1;
+	if (!(PIND & (1 << PD1))) { 
+		switchFlag = 2;
 		
 	}
 	else { 
-		switchFlag = 2;
+		switchFlag = 1;
 	}
 }
 
