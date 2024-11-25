@@ -172,6 +172,7 @@ int main(void)
 			lq_clear(&device);
 			if(switchFlag == 1 && screen == 2){
 				fsm = 0;
+				TIMSK1 |= (1 << OCIE1A);
 				
 				//SETTINGS
 				lq_setCursor(&device, 0, 0);
@@ -215,6 +216,7 @@ int main(void)
 				screen = 1;
 			}
 			else if (switchFlag == 2 && screen == 1){
+				TIMSK1 &= ~(1 << OCIE1A);
 				lq_setCursor(&device, 1, 0); // moving cursor to the next line
 				lq_print(&device, "AUX MODE");
 				
