@@ -99,6 +99,7 @@ int main(void)
 	}
 	else {
 		screen = 1;
+		PCMSK2 |= (1 << PCINT18) | (1 << PCINT20) | (1 << PCINT23);
 
 		lq_setCursor(&device, 0, 0);
 		lq_print(&device, "Amplitude");
@@ -143,7 +144,7 @@ int main(void)
 	
 	 
 	PCICR |= (1 << PCIE2);  // Enable Pin Change Interrupt for PCINT16-23 group (Port D)
-	PCMSK2 |= (1 << PCINT18) | (1 << PCINT20) | (1 << PCINT23) | (1<<PCINT17); //Enables interrupts for PD2, PD4, and PD7		UPDATE: PD1
+	PCMSK2 |=  (1<<PCINT17); //Enables interrupts for PD2, PD4, and PD7		UPDATE: PD1
 	sei();
 	
 	I2C_Init(); //initiates the DAC 
@@ -169,10 +170,12 @@ int main(void)
     {
 		if(switchFlag){													//SCREEN: DAC = 1, AUX = 2			SWITCH:  1 = SWITCH OPEN DAC, 2 = SWITCH CLOSED AUX
 			
-			lq_clear(&device);
+			
 			if(switchFlag == 1 && screen == 2){
+				lq_clear(&device);
 				fsm = 0;
 				TIMSK1 |= (1 << OCIE1A);
+				PCMSK2 |= (1 << PCINT18) | (1 << PCINT20) | (1 << PCINT23);
 				
 				//SETTINGS
 				lq_setCursor(&device, 0, 0);
@@ -216,7 +219,12 @@ int main(void)
 				screen = 1;
 			}
 			else if (switchFlag == 2 && screen == 1){
+				lq_clear(&device);
 				TIMSK1 &= ~(1 << OCIE1A);
+				PCMSK2 &= ~(1 << PCINT18); // Turn off PCINT18
+				PCMSK2 &= ~(1 << PCINT20); // Turn off PCINT20
+				PCMSK2 &= ~(1 << PCINT23); // Turn off PCINT23
+				
 				lq_setCursor(&device, 1, 0); // moving cursor to the next line
 				lq_print(&device, "AUX MODE");
 				
@@ -694,7 +702,7 @@ ISR(PCINT2_vect) {
 		switchFlag = 2;
 		
 	}
-	else { 
+	if(PIND & (1<<PD1)) { 
 		switchFlag = 1;
 	}
 }
