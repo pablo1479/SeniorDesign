@@ -16,7 +16,7 @@
 #include "i2c_master.h"
 
 #define I2C_SCL_FREQUENCY_PRESCALER 1
-#define I2C_TWBR_VALUE 
+#define I2C_TWBR_VALUE
 
 #define I2C_PRESCALER_MASK 0xF8
 
@@ -24,8 +24,8 @@
 
 void i2c_master_init(unsigned long frequency)
 {
-	TWSR0 = 0;
-	TWBR0 = (uint8_t)((((F_CPU / frequency) / I2C_SCL_FREQUENCY_PRESCALER) - 16 ) / 2);
+	TWSR1 = 0;
+	TWBR1 = (uint8_t)((((F_CPU / frequency) / I2C_SCL_FREQUENCY_PRESCALER) - 16 ) / 2);
 }
 
 uint8_t i2c_master_start(uint8_t address, uint8_t mode)
@@ -33,32 +33,32 @@ uint8_t i2c_master_start(uint8_t address, uint8_t mode)
 	uint8_t   twst;
 
 	// reset control register
-	TWCR0 = 0;
+	TWCR1 = 0;
 
 	// transmit START condition
-	TWCR0 = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
+	TWCR1 = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
 
 	// wait for end of transmission
-	while( !(TWCR0 & (1<<TWINT)) );
+	while( !(TWCR1 & (1<<TWINT)) );
 	
 	// check if the start condition was successfully transmitted. Mask prescaler bits.
-	twst = TWSR0 & TW_STATUS_MASK & I2C_PRESCALER_MASK;
+	twst = TWSR1 & TW_STATUS_MASK & I2C_PRESCALER_MASK;
 	if ( (twst != TW_START) && (twst != TW_REP_START))
 	{
 		return I2C_STATUS_ERROR_START_WAS_NOT_ACCEPTED;
 	}
 	
 	// load shifted slave address into data register with specified mode
-	TWDR0 = (address << 1) | mode;
+	TWDR1 = (address << 1) | mode;
 
 	// start transmission of address
-	TWCR0 = (1<<TWINT) | (1<<TWEN);
+	TWCR1 = (1<<TWINT) | (1<<TWEN);
 
 	// wait for end of transmission
-	while( !(TWCR0 & (1<<TWINT)) );
+	while( !(TWCR1 & (1<<TWINT)) );
 	
 	// check if the device has acknowledged the READ / WRITE mode
-	twst = TWSR0 & TW_STATUS_MASK & I2C_PRESCALER_MASK;
+	twst = TWSR1 & TW_STATUS_MASK & I2C_PRESCALER_MASK;
 	if ( (twst != TW_MT_SLA_ACK) && (twst != TW_MR_SLA_ACK) )
 	{
 		return I2C_STATUS_ERROR_TRANSMIT_OR_READ_WAS_NOT_ACKNOWLEDGED;
@@ -74,31 +74,31 @@ uint8_t i2c_master_startWait(uint8_t address, uint8_t mode)
 	while (1)
 	{
 		// send START condition
-		TWCR0 = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
+		TWCR1 = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
 		
 		// wait until transmission completed
-		while(!(TWCR0 & (1<<TWINT)));
+		while(!(TWCR1 & (1<<TWINT)));
 		
 		// check value of TWI Status Register. Mask prescaler bits.
-		twst = TWSR0 & TW_STATUS_MASK & I2C_PRESCALER_MASK;
+		twst = TWSR1 & TW_STATUS_MASK & I2C_PRESCALER_MASK;
 		if ( (twst != TW_START) && (twst != TW_REP_START)) continue;
 		
 		// send device address
-		TWDR0 = (address << 1) | mode;
-		TWCR0 = (1<<TWINT) | (1<<TWEN);
+		TWDR1 = (address << 1) | mode;
+		TWCR1 = (1<<TWINT) | (1<<TWEN);
 		
 		// wail until transmission completed
-		while(!(TWCR0 & (1<<TWINT)));
+		while(!(TWCR1 & (1<<TWINT)));
 		
 		// check value of TWI Status Register. Mask prescaler bits.
-		twst = TWSR0 & TW_STATUS_MASK & I2C_PRESCALER_MASK;
+		twst = TWSR1 & TW_STATUS_MASK & I2C_PRESCALER_MASK;
 		if ( (twst == TW_MT_SLA_NACK )||(twst ==TW_MR_DATA_NACK) )
 		{
 			/* device busy, send stop condition to terminate write operation */
-			TWCR0 = (1<<TWINT) | (1<<TWEN) | (1<<TWSTO);
+			TWCR1 = (1<<TWINT) | (1<<TWEN) | (1<<TWSTO);
 			
 			// wait until stop condition is executed and bus released
-			while(TWCR0 & (1<<TWSTO));
+			while(TWCR1 & (1<<TWSTO));
 			
 			continue;
 		}
@@ -113,16 +113,16 @@ uint8_t i2c_master_write(uint8_t data)
 	uint8_t twst;
 
 	// put data into data register
-	TWDR0 = data;
+	TWDR1 = data;
 
 	// start transmission of data
-	TWCR0 = (1<<TWINT) | (1<<TWEN);
+	TWCR1 = (1<<TWINT) | (1<<TWEN);
 
 	// wait for end of transmission
-	while( !(TWCR0 & (1<<TWINT)) );
+	while( !(TWCR1 & (1<<TWINT)) );
 	
 	// check value of TWI Status Register. Mask prescaler bits
-	twst = TWSR0 & TW_STATUS_MASK & I2C_PRESCALER_MASK;
+	twst = TWSR1 & TW_STATUS_MASK & I2C_PRESCALER_MASK;
 
 	// If Slave device not acknowledged transmission - returns an error
 	if( twst != TW_MT_DATA_ACK)
@@ -136,24 +136,24 @@ uint8_t i2c_master_write(uint8_t data)
 uint8_t i2c_master_readAck(void)
 {
 	// start TWI module and acknowledge data after reception
-	TWCR0 = (1<<TWINT) | (1<<TWEN) | (1<<TWEA);
+	TWCR1 = (1<<TWINT) | (1<<TWEN) | (1<<TWEA);
 
 	// wait for end of transmission
-	while( !(TWCR0 & (1<<TWINT)) );
+	while( !(TWCR1 & (1<<TWINT)) );
 
-	return TWDR0;
+	return TWDR1;
 }
 
 uint8_t i2c_master_readNack(void)
 {
 	// start receiving without acknowledging reception
-	TWCR0 = (1<<TWINT) | (1<<TWEN);
+	TWCR1 = (1<<TWINT) | (1<<TWEN);
 
 	// wait for end of transmission
-	while( !(TWCR0 & (1<<TWINT)) );
+	while( !(TWCR1 & (1<<TWINT)) );
 
 	// return received data from TWDR
-	return TWDR0;
+	return TWDR1;
 }
 
 uint8_t i2c_master_send(uint8_t address, uint8_t* data, uint16_t length)
@@ -206,7 +206,7 @@ uint8_t i2c_master_receive(uint8_t address, uint8_t* data, uint16_t length)
 
 void i2c_master_stop(void)
 {
-	TWCR0 = (1<<TWINT) | (1<<TWEN) | (1<<TWSTO);
+	TWCR1 = (1<<TWINT) | (1<<TWEN) | (1<<TWSTO);
 };
 
 
@@ -214,25 +214,25 @@ void i2c_master_stop(void)
 
 void I2C_Init(void) {
 	// Set the bit rate for 400 kHz I2C
-	TWSR1 = 0x00;  // Prescaler set to 1
-	TWBR1 = ((F_CPU / SCL_CLOCK) - 16) / 2;  // Set bit rate register for 400kHz
+	TWSR0 = 0x00;  // Prescaler set to 1
+	TWBR0 = ((F_CPU / SCL_CLOCK) - 16) / 2;  // Set bit rate register for 400kHz
 }
 
 void I2C_Start(void) {
-	TWCR1 = (1<<TWSTA) | (1<<TWEN) | (1<<TWINT);  // Send start condition
-	while (!(TWCR1 & (1<<TWINT)));  // Wait for transmission to complete
+	TWCR0 = (1<<TWSTA) | (1<<TWEN) | (1<<TWINT);  // Send start condition
+	while (!(TWCR0 & (1<<TWINT)));  // Wait for transmission to complete
 }
 
 // I2C Stop condition
 void I2C_Stop(void) {
-	TWCR1 = (1<<TWSTO) | (1<<TWINT) | (1<<TWEN);  // Send stop condition
+	TWCR0 = (1<<TWSTO) | (1<<TWINT) | (1<<TWEN);  // Send stop condition
 }
 
 // I2C Write byte
 void I2C_Write(uint8_t data) {
-	TWDR1 = data;  // Load data to data register
-	TWCR1 = (1<<TWINT) | (1<<TWEN);  // Start transmission
-	while (!(TWCR1 & (1<<TWINT)));  // Wait for transmission to complete
+	TWDR0 = data;  // Load data to data register
+	TWCR0 = (1<<TWINT) | (1<<TWEN);  // Start transmission
+	while (!(TWCR0 & (1<<TWINT)));  // Wait for transmission to complete
 }
 
 void MCP4725_SetValue(uint16_t value) {
