@@ -98,6 +98,11 @@ int main(void)
 	
 	}
 	else {
+		
+		lq_setCursor(&device, 1, 0); // moving cursor to the next line
+		lq_print(&device, "TONE GENERATOR MODE");
+		_delay_ms(2000);
+		lq_clear(&device);
 		screen = 1;
 		PCMSK2 |= (1 << PCINT18) | (1 << PCINT20) | (1 << PCINT23);
 
@@ -172,6 +177,10 @@ int main(void)
 			
 			
 			if(switchFlag == 1 && screen == 2){
+				lq_clear(&device);
+				lq_setCursor(&device, 1, 0); // moving cursor to the next line
+				lq_print(&device, "TONE GENERATOR MODE");
+				_delay_ms(2000);
 				lq_clear(&device);
 				fsm = 0;
 				TIMSK1 |= (1 << OCIE1A);
